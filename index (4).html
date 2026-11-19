@@ -1,0 +1,1110 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script src="/shim.js"></script>
+<title>AI Study Copilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one app window. Left: materials, exam date, countdown. Centre: explain, then quiz. Right: seven-day revision plan. Stacks to one column on phones. */
+:root {
+  --bg: #f2f5fb;
+  --surface: #ffffff;
+  --surface-2: #e9eef9;
+  --ink: #131822;
+  --muted: #566074;
+  --line: #d3daea;
+  --accent: #2851df;
+  --on-accent: #ffffff;
+  --accent-soft: #dbe4fd;
+  --good: #17804a;
+  --good-soft: #d5f0e0;
+  --warn: #8f5a08;
+  --warn-soft: #fbecc9;
+  --bad: #bf3434;
+  --bad-soft: #f8dada;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f131b; --surface: #171c27; --surface-2: #1f2633; --ink: #e8ecf4; --muted: #99a3b8;
+    --line: #2a3344; --accent: #86a1ff; --on-accent: #0b1020; --accent-soft: #212d54;
+    --good: #5bcb8b; --good-soft: #15331f; --warn: #e5ab52; --warn-soft: #3a2c10;
+    --bad: #ff8585; --bad-soft: #3b1d20; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f131b; --surface: #171c27; --surface-2: #1f2633; --ink: #e8ecf4; --muted: #99a3b8;
+  --line: #2a3344; --accent: #86a1ff; --on-accent: #0b1020; --accent-soft: #212d54;
+  --good: #5bcb8b; --good-soft: #15331f; --warn: #e5ab52; --warn-soft: #3a2c10;
+  --bad: #ff8585; --bad-soft: #3b1d20; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--font-body);
+  padding-block: 20px 36px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 1280px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; margin-bottom: 16px; }
+.kicker { display: inline-block; font: 500 11px var(--font-mono); letter-spacing: .06em; background: var(--accent); color: var(--on-accent); padding: 3px 9px; border-radius: 999px; margin: 0; }
+h1 { font: 700 clamp(30px, 5vw, 46px)/1.04 var(--font-display); letter-spacing: -.02em; margin: 10px 0 2px; text-wrap: balance; }
+.hand { font: 600 23px/1.1 var(--font-hand); color: var(--good); margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; margin: 8px 0 0; }
+.chip { display: inline-flex; align-items: center; gap: 8px; font: 500 12px var(--font-mono); padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: block; }
+.chip.on i { background: var(--good); }
+.chip.off i { background: var(--bad); }
+.banner { background: var(--warn-soft); color: var(--ink); border: 1px solid var(--warn); border-radius: 10px; padding: 10px 14px; margin: 0 0 14px; font-size: 14px; }
+
+/* window */
+.window { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.titlebar { display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); font: 12px var(--font-mono); color: var(--muted); }
+.titlebar i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.titlebar i:nth-child(1) { background: var(--bad); }
+.titlebar i:nth-child(2) { background: var(--warn); }
+.titlebar i:nth-child(3) { background: var(--good); }
+.titlebar span { margin-left: 8px; }
+.app { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) minmax(0, 310px); }
+.col { padding: 16px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+.col + .col { border-left: 1px solid var(--line); }
+@media (max-width: 1020px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .col + .col { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+.label { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+h2.title { font: 700 20px/1.2 var(--font-display); margin: 0; letter-spacing: -.01em; }
+.panelhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 12px; }
+.msg { font-size: 13px; color: var(--muted); margin: 8px 0 0; min-height: 1px; }
+.empty { color: var(--muted); margin: 0; }
+
+/* controls */
+.btn { font: 600 13px var(--font-body); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.linkbtn { background: none; border: 0; padding: 4px 0; font: 500 12.5px var(--font-body); color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+input[type="text"], input[type="date"], select, textarea {
+  font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--ink); max-width: 100%;
+}
+textarea { width: 100%; resize: vertical; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.row .grow { flex: 1 1 200px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg label { position: relative; display: block; }
+.seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.seg span { display: block; padding: 7px 12px; font-size: 12.5px; color: var(--muted); }
+.seg input:checked + span { background: var(--accent); color: var(--on-accent); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* materials */
+.mats { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mat { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.mat.on { background: var(--accent-soft); border-color: var(--accent); }
+.matbtn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 9px 4px 9px 10px; background: none; border: 0; color: inherit; text-align: left; font: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; }
+.ext { font: 500 9px var(--font-mono); background: var(--surface-2); color: var(--muted); padding: 2px 4px; border-radius: 3px; flex: none; }
+.mat.on .ext { background: var(--accent); color: var(--on-accent); }
+.nm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.when { font: 11px var(--font-mono); color: var(--muted); white-space: nowrap; flex: none; }
+.tagx { font: 500 9px var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; flex: none; }
+.x { border: 0; background: none; color: var(--muted); padding: 0 10px; cursor: pointer; font-size: 18px; line-height: 1; border-radius: 8px; }
+.x:hover { color: var(--bad); }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.drop:focus-within, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.upload { font: 500 12.5px var(--font-mono); color: var(--accent); cursor: pointer; }
+#pasteForm { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+details summary { cursor: pointer; font-size: 13px; color: var(--accent); margin-top: 8px; }
+pre.preview { max-height: 200px; overflow: auto; font: 12px/1.5 var(--font-mono); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.next { background: var(--accent); color: var(--on-accent); border-radius: 10px; padding: 14px; }
+.next .k { font: 500 11px var(--font-mono); letter-spacing: .06em; opacity: .85; text-transform: uppercase; }
+.next .big { font: 700 22px/1.2 var(--font-display); margin-top: 4px; overflow-wrap: anywhere; }
+
+/* explain + quiz */
+.panel { min-width: 0; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.topic { font: 500 12px var(--font-body); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.topic:hover { border-color: var(--accent); color: var(--accent); }
+.out { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-height: 130px; margin-top: 14px; }
+.badge { font: 500 11px var(--font-mono); padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.badge.ex { background: var(--warn-soft); color: var(--warn); }
+.outbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+.prose p { margin: 0 0 10px; }
+.prose p:last-child, .prose ul:last-child { margin-bottom: 0; }
+.prose ul { margin: 0 0 10px; padding-left: 20px; }
+.prose li { margin-bottom: 4px; }
+.prose h4 { font: 700 15px var(--font-display); margin: 12px 0 6px; }
+.prose code { font: 12.5px var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.prose pre { overflow-x: auto; background: var(--surface-2); padding: 10px; border-radius: 8px; }
+.prose pre code { background: none; padding: 0; }
+.err { color: var(--bad); font-size: 13.5px; margin: 10px 0 0; }
+.qtext { font: 600 16px/1.4 var(--font-display); margin: 0 0 12px; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; opacity: 1; }
+.opt .l { font: 500 12px var(--font-mono); color: var(--muted); min-width: 1.4em; padding-top: 1px; }
+.opt .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.opt .ok { font: 500 11px var(--font-mono); color: var(--good); }
+.opt.right { background: var(--good-soft); border-color: var(--good); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); }
+.why { margin: 12px 0 0; font-size: 14px; }
+.score { font: 700 34px var(--font-display); margin: 0 0 4px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* plan */
+.bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--good); width: 0; transition: width .25s ease; }
+.prog { display: flex; justify-content: space-between; font: 12px var(--font-mono); color: var(--muted); margin: 0 0 6px; }
+.day { margin-top: 14px; }
+.day h3 { font: 600 12px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+.day.today h3 { color: var(--accent); }
+.day ul { list-style: none; margin: 0; padding: 0; }
+.day li { border-bottom: 1px dashed var(--line); }
+.day li:last-child { border-bottom: 0; }
+.day label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.day input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); flex: none; }
+.day .tx { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.subj { font: 500 11px var(--font-mono); color: var(--accent); }
+.task { font-size: 14px; overflow-wrap: anywhere; }
+.kind { font: 500 10px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; background: var(--warn-soft); color: var(--warn); border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
+.day li.done .task { text-decoration: line-through; color: var(--muted); }
+.note { font: 600 19px/1.1 var(--font-hand); color: var(--good); margin: 4px 0 0; }
+
+/* account */
+.hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 0; }
+@media (max-width: 640px) { .hdr-right { align-items: flex-start; } }
+.acct { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; justify-content: flex-end; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); flex: none; }
+.who { font: 600 14px var(--font-display); overflow-wrap: anywhere; }
+.sync { font: 11px var(--font-mono); color: var(--muted); }
+.sync.bad { color: var(--bad); }
+.btn.small { padding: 5px 10px; font-size: 12.5px; }
+.authcard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
+.authcard form { display: flex; flex-direction: column; gap: 12px; }
+.authcard select, .authcard input[type="text"] { width: 100%; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+.danger { border-top: 1px dashed var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.btn.warn { background: var(--bad); border-color: var(--bad); color: var(--on-accent); }
+
+/* chat */
+.chat { display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow-y: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-height: 90px; }
+.bub { max-width: 92%; padding: 9px 12px; border-radius: 12px; font-size: 14px; overflow-wrap: anywhere; }
+.bub.user { align-self: flex-end; background: var(--accent); color: var(--on-accent); }
+.bub.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); }
+.bub.assistant.prose p:last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">EdTech · LLMs</p>
+      <h1>AI Study Copilot</h1>
+      <p id="hand" class="hand">your notes in, a plan out</p>
+      <p class="lede">Add your notes and syllabi, get explanations at the level you need, quiz yourself, ask questions, and follow a revision plan built around your exam dates.</p>
+    </div>
+    <div class="hdr-right">
+      <div id="acct" class="acct" hidden></div>
+      <span id="aiChip" class="chip" role="status"><i></i><span>Connecting to Claude</span></span>
+    </div>
+  </header>
+
+  <p id="aiBanner" class="banner" hidden>Claude is not available in this view, so explanations, quizzes, chat and plan tuning are off. Your notes, exam dates and the revision plan still work.</p>
+
+  <p id="loadingBox" class="msg" role="status">Checking your account…</p>
+
+  <section id="authBox" class="authcard" aria-labelledby="authH" hidden>
+    <h2 id="authH" class="title"></h2>
+    <p id="authText" class="lede" style="margin:0"></p>
+    <form id="authForm" hidden>
+      <div class="field"><label for="aName" class="label" style="margin:0">Display name</label><input id="aName" type="text" maxlength="40" autocomplete="nickname"></div>
+      <div class="field"><label for="aCourse" class="label" style="margin:0">What are you studying?</label><input id="aCourse" type="text" maxlength="80" placeholder="e.g. B.Tech CSE, 5th semester"></div>
+      <div class="field"><label for="aLevel" class="label" style="margin:0">Default explanation level</label>
+        <select id="aLevel"><option value="beginner">Beginner</option><option value="exam" selected>Exam-ready</option><option value="deep">Deep dive</option></select></div>
+      <label id="aImportRow" class="check" hidden><input type="checkbox" id="aImport" checked><span>Bring in the notes already saved on this device</span></label>
+      <div class="btnrow" style="margin-top:0">
+        <button id="aSubmit" class="btn" type="submit">Create account</button>
+        <button id="aCancel" class="btn ghost" type="button" hidden>Cancel</button>
+        <button id="aGuest" class="btn ghost" type="button">Continue as guest</button>
+      </div>
+      <div id="aDanger" class="danger" hidden>
+        <button id="aDelAsk" class="linkbtn" type="button" style="align-self:flex-start">Delete my study data</button>
+        <div id="aDelBox" hidden>
+          <p class="msg" style="margin:0 0 8px">This removes your profile, notes, exam dates and plan progress from this page. It cannot be undone.</p>
+          <button id="aDelGo" class="btn warn small" type="button">Yes, delete everything</button>
+        </div>
+      </div>
+    </form>
+    <div id="gateBtns" class="btnrow" style="margin-top:0" hidden>
+      <button id="gateRetry" class="btn" type="button">Check again</button>
+      <button id="gateGuest" class="btn ghost" type="button">Continue as guest</button>
+    </div>
+    <p id="authMsg" class="err" role="alert" hidden></p>
+  </section>
+
+  <div id="shell" class="window" hidden>
+    <div class="titlebar" aria-hidden="true"><i></i><i></i><i></i><span>study-copilot</span></div>
+    <div class="app">
+
+      <!-- left: materials -->
+      <aside class="col" aria-label="Materials">
+        <section>
+          <h2 class="label">My materials</h2>
+          <ul id="matList" class="mats"></ul>
+          <div id="drop" class="drop">
+            <label class="upload" for="fileIn">+ upload notes</label>
+            <input id="fileIn" class="sr" type="file" multiple accept=".txt,.md,.markdown,.csv,.tex,.json,text/plain,text/markdown">
+            <button id="pasteBtn" class="linkbtn" type="button" aria-expanded="false" aria-controls="pasteForm">or paste text</button>
+          </div>
+          <form id="pasteForm" hidden>
+            <div class="field"><label for="pName" class="label" style="margin:0">Name</label><input id="pName" type="text" placeholder="e.g. OS_unit2" maxlength="60"></div>
+            <div class="field"><label for="pText" class="label" style="margin:0">Notes</label><textarea id="pText" rows="6" placeholder="Paste your notes. Use ## headings for topics."></textarea></div>
+            <button class="btn" type="submit">Add notes</button>
+          </form>
+          <p id="noteMsg" class="msg" role="status"></p>
+        </section>
+
+        <section id="activeBox" aria-label="Selected material">
+          <h2 class="label">Exam date</h2>
+          <div class="row">
+            <div class="field"><label for="examDate" class="sr">Exam date for the selected material</label><input id="examDate" type="date"></div>
+            <button id="clearDate" class="linkbtn" type="button">Clear</button>
+          </div>
+          <details><summary>Preview notes</summary><pre id="preview" class="preview"></pre></details>
+        </section>
+
+        <section id="nextExam" class="next" aria-live="polite"></section>
+      </aside>
+
+      <!-- centre: explain + quiz -->
+      <main class="col">
+        <section class="panel" aria-labelledby="eh">
+          <div class="panelhead">
+            <h2 id="eh" class="title">Explain a topic</h2>
+            <div class="seg" role="radiogroup" aria-label="Explanation level">
+              <label><input type="radio" name="level" value="beginner"><span>Beginner</span></label>
+              <label><input type="radio" name="level" value="exam"><span>Exam-ready</span></label>
+              <label><input type="radio" name="level" value="deep"><span>Deep dive</span></label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field grow"><label for="topic" class="label" style="margin:0">Topic</label><input id="topic" type="text" maxlength="120" placeholder="e.g. Second normal form"></div>
+            <button id="explainBtn" class="btn" type="button">Explain</button>
+          </div>
+          <div id="topicChips" class="topics" aria-label="Topics found in the selected notes"></div>
+          <div id="explainOut" class="out prose" aria-live="polite"></div>
+          <div class="outbar">
+            <span id="explainBadge" class="badge"></span>
+            <button id="explainStop" class="btn ghost" type="button" hidden>Stop</button>
+          </div>
+          <p id="explainErr" class="err" role="alert" hidden></p>
+        </section>
+
+        <section class="panel" aria-labelledby="qh">
+          <div class="panelhead">
+            <h2 id="qh" class="title">Quick quiz</h2>
+            <span><span id="qBadge" class="badge"></span> <span id="qCounter" class="when"></span></span>
+          </div>
+          <div class="row" style="margin-bottom:14px">
+            <div class="field"><label for="qN" class="label" style="margin:0">Questions</label>
+              <select id="qN"><option value="5">5</option><option value="8">8</option><option value="10">10</option></select></div>
+            <div class="field"><label for="qScope" class="label" style="margin:0">Cover</label>
+              <select id="qScope"><option value="all">Whole material</option><option value="topic">Topic in the box above</option></select></div>
+            <button id="quizBtn" class="btn" type="button">Generate quiz</button>
+            <button id="quizStop" class="btn ghost" type="button" hidden>Stop</button>
+          </div>
+          <div id="quizBody" class="out" aria-live="polite"></div>
+          <p id="quizErr" class="err" role="alert" hidden></p>
+        </section>
+
+        <section class="panel" aria-labelledby="ch">
+          <div class="panelhead">
+            <h2 id="ch" class="title">Ask your notes</h2>
+            <button id="chatClear" class="linkbtn" type="button">Clear chat</button>
+          </div>
+          <div id="chatLog" class="chat" aria-live="polite"></div>
+          <div id="chatSug" class="topics"></div>
+          <form id="chatForm" class="row" style="margin-top:12px">
+            <div class="field grow"><label for="chatIn" class="sr">Ask a question about the selected notes</label><input id="chatIn" type="text" maxlength="500" autocomplete="off" placeholder="Ask anything about these notes"></div>
+            <button id="chatSend" class="btn" type="submit">Send</button>
+            <button id="chatStop" class="btn ghost" type="button" hidden>Stop</button>
+          </form>
+          <p id="chatErr" class="err" role="alert" hidden></p>
+        </section>
+      </main>
+
+      <!-- right: revision plan -->
+      <aside class="col" aria-label="Revision plan">
+        <section aria-labelledby="ph">
+          <div class="panelhead" style="margin-bottom:8px">
+            <h2 id="ph" class="title">Revision plan</h2>
+            <span id="planBadge" class="badge" hidden>Tuned by Claude</span>
+          </div>
+          <div class="prog"><span id="planCount">0 of 0 done</span><span>next 7 days</span></div>
+          <div class="bar" aria-hidden="true"><i id="planBar"></i></div>
+          <div id="planList"></div>
+          <div class="btnrow">
+            <button id="tuneBtn" class="btn ghost" type="button">Tune with Claude</button>
+            <button id="tuneStop" class="btn ghost" type="button" hidden>Stop</button>
+            <button id="resetPlan" class="linkbtn" type="button" hidden>Back to automatic plan</button>
+          </div>
+          <p id="planMsg" class="msg" role="status"></p>
+        </section>
+      </aside>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var LS = 'ai-study-copilot.v1';
+  var DAY = 864e5;
+
+  /* ---------- dates ---------- */
+  function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+  var TODAY = startOfDay(new Date());
+  function iso(d) { var x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+  function parseISO(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function diffDays(a, b) { return Math.round((startOfDay(a) - startOfDay(b)) / DAY); }
+  function dayLabel(d) { return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  function inDays(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days'; }
+
+  /* ---------- sample content (clearly marked as samples in the UI) ---------- */
+  var DBMS = '# DBMS notes: Normalization\n\n## Functional dependency\nA functional dependency X -> Y means two rows with the same X value must have the same Y value. Example: student_id -> student_name.\n\n## First normal form (1NF)\nEvery column holds atomic values. No repeating groups and no lists inside a cell.\n\n## Second normal form (2NF)\nA table is in 2NF when it is in 1NF and every non-key column depends on the whole primary key, not just part of it. Partial dependency example: with key (student_id, course_id), course_name depends only on course_id, so it violates 2NF. Fix: move course_name into a Course table.\n\n## Third normal form (3NF)\nThe table is in 2NF and has no transitive dependency: a non-key column must not depend on another non-key column. Example: student_id -> dept_id -> dept_name.\n\n## BCNF\nFor every functional dependency X -> Y, X must be a superkey. Stricter than 3NF. It matters when a table has overlapping candidate keys.\n\n## Transactions and ACID\nAtomicity, Consistency, Isolation, Durability. A transaction is a unit of work that either commits fully or rolls back.\n\n## Indexing\nA B+ tree index keeps keys sorted and leaves linked, so lookups and range queries cost O(log n).\n';
+  var OS = '# Operating Systems: Syllabus\n\n## Unit 1: Processes and threads\nProcess states, PCB, context switch, threads versus processes.\n\n## Unit 2: CPU scheduling\nFCFS, SJF, round robin, priority scheduling, turnaround time and waiting time.\n\n## Unit 3: Synchronization\nCritical section problem, semaphores, mutex, producer-consumer, dining philosophers.\n\n## Unit 4: Deadlocks\nFour necessary conditions, resource allocation graph, Banker\'s algorithm.\n\n## Unit 5: Memory management\nPaging, segmentation, page tables, TLB, page replacement with FIFO, LRU and optimal.\n';
+  var CN = '# Computer Networks: Unit 3, Network layer\n\n## IPv4 addressing\n32-bit addresses, classful ranges A to E, private ranges, subnet mask, CIDR notation such as 192.168.10.0/24.\n\n## Subnetting\nBorrow host bits to create subnets. A /26 gives 4 subnets of 62 usable hosts each.\n\n## Routing algorithms\nDistance vector (Bellman-Ford, count-to-infinity) versus link state (Dijkstra, flooding).\n\n## ICMP and NAT\nICMP carries error and control messages such as ping and traceroute. NAT maps private addresses to one public address using port numbers.\n\n## IPv6\n128-bit addresses, simplified header, no router fragmentation, no broadcast.\n';
+
+  var EX_EXPLAIN = {
+    beginner: 'Normalization is tidying a database so each fact is stored once.\n\n- **Why:** if a course name is copied onto every row, fixing one typo means editing many rows.\n- **1NF:** one value per cell.\n- **2NF:** every column describes the *whole* key.\n- **3NF:** columns describe the key, not each other.\n\nThink of a class register. The course name belongs on a course list, and the register only points to it.',
+    exam: 'A table is in **2NF** when it is in 1NF and every non-key column depends on the whole primary key, not just part of it.\n\n- Partial dependency: key `(student_id, course_id)`, and `course_name` depends only on `course_id`.\n- Fix: split into `Enrollment(student_id, course_id)` and `Course(course_id, course_name)`.\n- Common mistake: checking 2NF on a table with a single-column key. It is automatically in 2NF.\n\nExaminers usually give marks for the definition, one partial dependency and the decomposition.',
+    deep: '2NF removes **partial dependencies**: a non-prime attribute A is partially dependent on a candidate key K when a proper subset of K already determines A.\n\n- It only matters for composite keys. With a single-attribute key, every 1NF table is already in 2NF.\n- The decomposition must be lossless and ideally dependency-preserving. Splitting on `course_id -> course_name` is lossless because `course_id` is a key of the new Course table.\n- 2NF still allows transitive dependencies. 3NF removes those, and BCNF goes further by requiring every determinant to be a superkey.\n- Trade-off: more joins at read time. Denormalizing on purpose can be right when reads dominate and the copied data rarely changes.'
+  };
+  var EX_QUIZ = [
+    { q: 'Which normal form removes partial dependencies?', options: ['1NF', '2NF', '3NF', 'BCNF'], answer: 1, why: '2NF requires every non-key column to depend on the whole primary key.' },
+    { q: 'A table has key (student_id, course_id). Which column breaks 2NF?', options: ['grade', 'enrolled_on', 'course_name', 'student_id'], answer: 2, why: 'course_name depends only on course_id, which is just part of the key.' },
+    { q: 'BCNF requires that for every functional dependency X -> Y, which of these holds?', options: ['Y is a prime attribute', 'X is a superkey', 'X is a single column', 'Y is never null'], answer: 1, why: 'BCNF is 3NF with the extra rule that every determinant is a superkey.' }
+  ];
+
+  /* ---------- state ---------- */
+  var MAXTEXT = 80000;
+  function seed() {
+    var t = Date.now();
+    return {
+      materials: [
+        { id: 'm1', name: 'DBMS_notes.md', subject: 'DBMS', text: DBMS, exam: iso(addDays(TODAY, 9)), sample: true, createdAt: t },
+        { id: 'm2', name: 'OS_syllabus.md', subject: 'OS', text: OS, exam: iso(addDays(TODAY, 16)), sample: true, createdAt: t + 1 },
+        { id: 'm3', name: 'CN_unit3.md', subject: 'CN', text: CN, exam: iso(addDays(TODAY, 23)), sample: true, createdAt: t + 2 }
+      ],
+      active: 'm1', level: 'exam', done: {}, tuned: null
+    };
+  }
+  function loadLocal(fallbackSeed) {
+    try {
+      var r = localStorage.getItem(LS);
+      if (r) { var s = JSON.parse(r); if (s && Array.isArray(s.materials)) { s.done = s.done || {}; s.level = s.level || 'exam'; return s; } }
+    } catch (e) {}
+    return fallbackSeed === false ? null : seed();
+  }
+  var state = seed();
+
+  /* ---------- accounts and storage ----------
+     Log in and sign up use the viewer's claude.ai identity (the `user` capability).
+     An account keeps its profile, notes and progress in the `db` capability, in the
+     viewer's private subtree, so it follows them across devices. A guest keeps
+     everything in this browser only. */
+  var mode = 'loading'; // loading | gate | account | guest
+  var acct = { uid: null, db: null, me: null, profile: null };
+  function useCap(name) {
+    return (async function () {
+      try { if (!window.claude || !window.claude.use) return null; return await window.claude.use(name); } catch (e) { return null; }
+    })();
+  }
+  var userPromise = useCap('user'), dbPromise = useCap('db');
+  function withTimeout(p, ms, fallback) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(fallback); }, ms); })]); }
+  function docRef(name) { return acct.db.doc('data/users/' + acct.uid + '/' + name); }
+  function matCol() { return acct.db.doc('data/users/' + acct.uid + '/profile').collection('materials'); }
+
+  var wq = Promise.resolve(), stTimer = null;
+  function setSync(kind, e) {
+    var s = $('#syncNote'); if (!s) return;
+    s.className = 'sync' + (kind === 'error' ? ' bad' : '');
+    s.textContent = kind === 'saving' ? 'Saving…' : kind === 'saved' ? 'Saved to your account'
+      : (e && e.code === 'invalid_argument') ? 'Not saved. Ask the page owner for Contributor access.' : 'Not saved. Check your connection.';
+  }
+  function enqueue(fn) {
+    setSync('saving');
+    wq = wq.then(async function () {
+      try { await fn(); }
+      catch (e) { if (e && e.code === 'unavailable') { await new Promise(function (r) { setTimeout(r, 700); }); await fn(); } else throw e; }
+    }).then(function () { setSync('saved'); }, function (e) { setSync('error', e); });
+    return wq;
+  }
+  function matDoc(m) { return { name: m.name, subject: m.subject, text: m.text, exam: m.exam || null, sample: !!m.sample, createdAt: m.createdAt || Date.now() }; }
+  function settingsDoc() {
+    var cutoff = iso(addDays(TODAY, -30));
+    var keys = Object.keys(state.done).filter(function (k) { return k.slice(0, 10) >= cutoff; }).slice(0, 400);
+    return { level: state.level, active: state.active || null, doneKeys: keys, tuned: state.tuned || null };
+  }
+  function persistMat(m) { if (mode === 'account') enqueue(function () { return matCol().doc(m.id).set(matDoc(m)); }); }
+  function persistDel(id) { if (mode === 'account') enqueue(function () { return matCol().doc(id).delete(); }); }
+  function save() {
+    if (mode === 'account') {
+      clearTimeout(stTimer);
+      stTimer = setTimeout(function () { enqueue(function () { return docRef('settings').set(settingsDoc()); }); }, 500);
+      return;
+    }
+    try { localStorage.setItem(LS, JSON.stringify(state)); }
+    catch (e) { msg('This browser would not save your changes. They last until you close the page.'); }
+  }
+  function activeMat() { return state.materials.find(function (m) { return m.id === state.active; }) || null; }
+  function who() {
+    var p = mode === 'account' && acct.profile ? acct.profile : null;
+    return p && p.course ? 'The student is studying ' + p.course + '. ' : '';
+  }
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function inline(s) {
+    return s.replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
+  }
+  function md(src) {
+    var lines = esc(src).split('\n'), out = '', list = false, code = false, buf = [], m;
+    function close() { if (list) { out += '</ul>'; list = false; } }
+    lines.forEach(function (line) {
+      if (/^```/.test(line)) {
+        if (code) { out += '<pre><code>' + buf.join('\n') + '</code></pre>'; buf = []; code = false; } else { close(); code = true; }
+        return;
+      }
+      if (code) { buf.push(line); return; }
+      if ((m = /^\s*(?:[-*•]|\d+[.)])\s+(.*)$/.exec(line))) { if (!list) { out += '<ul>'; list = true; } out += '<li>' + inline(m[1]) + '</li>'; return; }
+      close();
+      if ((m = /^#{1,4}\s+(.*)$/.exec(line))) { out += '<h4>' + inline(m[1]) + '</h4>'; return; }
+      if (!line.trim()) return;
+      out += '<p>' + inline(line) + '</p>';
+    });
+    if (code) out += '<pre><code>' + buf.join('\n') + '</code></pre>';
+    close();
+    return out;
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function msg(t) { $('#noteMsg').textContent = t || ''; }
+  function topicsOf(m) {
+    var t = [];
+    m.text.split('\n').forEach(function (line) {
+      var h = /^#{2,4}\s+(.+?)\s*$/.exec(line);
+      if (h) t.push(h[1].replace(/^Unit\s*\d+:\s*/i, '').trim());
+    });
+    if (t.length) return t.slice(0, 24);
+    return m.text.split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).slice(0, 12)
+      .map(function (p) { return p.split(/\s+/).slice(0, 6).join(' ').replace(/[.,;:]+$/, ''); });
+  }
+  function subjectFromName(n) {
+    return n.replace(/\.[A-Za-z0-9]+$/, '').replace(/[_-]+/g, ' ').replace(/\s*(notes|syllabus)$/i, '').trim() || n;
+  }
+  function errCopy(e) {
+    switch (e && e.code) {
+      case 'not_granted': return 'Claude access was declined for this page. Reload and allow it to use explanations and quizzes.';
+      case 'rate_limited': return 'Too many requests, or your usage limit is reached. Try again in a few minutes.';
+      case 'session_expired': return 'Your session expired. Sign in again, then retry.';
+      case 'invalid_json': return 'Claude replied in a shape this page could not read. Press the button to try again.';
+      case 'refused': return 'Claude declined this request. Try a different topic or different notes.';
+      case 'prompt_too_large': return 'These notes are too long. Split them into smaller files.';
+      case 'sampling_disabled': case 'capability_disabled': case 'not_declared': case 'capability_removed': return 'Claude is not available for this account in this view.';
+      default: return 'Something went wrong while asking Claude. Press the button to try again.';
+    }
+  }
+  function isPermanent(e) { return e && ['not_granted', 'sampling_disabled', 'capability_disabled', 'not_declared', 'capability_removed'].indexOf(e.code) >= 0; }
+
+  /* ---------- Claude ---------- */
+  var aiDisabled = false;
+  var samplePromise = (async function () {
+    try { if (!window.claude || !window.claude.use) return null; return await window.claude.use('sample'); } catch (e) { return null; }
+  })();
+  function setChip(kind) {
+    var c = $('#aiChip'); c.className = 'chip ' + kind;
+    c.lastChild.textContent = kind === 'on' ? 'Claude connected' : kind === 'off' ? 'Claude unavailable' : 'Connecting to Claude';
+  }
+  function aiOff() {
+    aiDisabled = true; setChip('off'); $('#aiBanner').hidden = false;
+    ['explainBtn', 'quizBtn', 'tuneBtn', 'chatSend'].forEach(function (id) { $('#' + id).disabled = true; });
+  }
+  samplePromise.then(function (s) { if (s) setChip('on'); else aiOff(); });
+
+  /* ---------- generated content (in memory) ---------- */
+  var gen = { explain: null, quiz: null };
+  var explainSeq = 0, quizSeq = 0, tuneSeq = 0, explainCtl = null, quizCtl = null, tuneCtl = null;
+  var quizBusy = false;
+
+  function resetGen() {
+    explainSeq++; quizSeq++; tuneSeq++; chat.seq++;
+    [explainCtl, quizCtl, tuneCtl, chat.ctl].forEach(function (c) { if (c) c.abort(); });
+    quizBusy = false; gen.explain = null; gen.quiz = null; chat.turns = []; chat.busy = false;
+    $('#explainErr').hidden = true; $('#quizErr').hidden = true; $('#chatErr').hidden = true; $('#planMsg').textContent = '';
+    $('#explainStop').hidden = true; $('#quizStop').hidden = true; $('#tuneStop').hidden = true;
+    $('#tuneBtn').disabled = aiDisabled;
+  }
+  function exampleState() {
+    gen.explain = { text: EX_EXPLAIN[state.level], topic: 'Normalization', level: state.level, subject: 'DBMS', example: true };
+    gen.quiz = { items: EX_QUIZ, i: 0, picked: [], example: true, subject: 'DBMS' };
+    $('#topic').value = 'Normalization';
+  }
+
+  /* ---------- materials ---------- */
+  function renderMats() {
+    var ul = $('#matList'); ul.textContent = '';
+    state.materials.forEach(function (m) {
+      var li = el('li', 'mat' + (m.id === state.active ? ' on' : ''));
+      var b = el('button', 'matbtn'); b.type = 'button'; b.setAttribute('aria-pressed', m.id === state.active ? 'true' : 'false');
+      b.append(el('span', 'ext', m.name.indexOf('.') > 0 ? m.name.split('.').pop().slice(0, 4).toUpperCase() : 'TXT'), el('span', 'nm', m.name));
+      if (m.sample) b.append(el('span', 'tagx', 'sample'));
+      if (m.exam) { var n = diffDays(parseISO(m.exam), TODAY); b.append(el('span', 'when', n < 0 ? 'passed' : n + 'd')); }
+      b.onclick = function () { setActive(m.id); };
+      var x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + m.name);
+      x.onclick = function () { removeMat(m.id); };
+      li.append(b, x); ul.append(li);
+    });
+    if (!state.materials.length) { var li2 = el('li', 'empty', 'No materials yet. Upload or paste your notes.'); ul.append(li2); }
+  }
+  function renderActive() {
+    var m = activeMat();
+    $('#examDate').value = m && m.exam ? m.exam : '';
+    $('#examDate').disabled = !m; $('#clearDate').disabled = !m;
+    $('#preview').textContent = m ? m.text.slice(0, 2500) + (m.text.length > 2500 ? '\n…' : '') : '';
+    var chips = $('#topicChips'); chips.textContent = '';
+    if (m) topicsOf(m).slice(0, 8).forEach(function (t) {
+      var b = el('button', 'topic', t); b.type = 'button';
+      b.onclick = function () { $('#topic').value = t; runExplain(); };
+      chips.append(b);
+    });
+  }
+  function renderNext() {
+    var box = $('#nextExam'); box.textContent = '';
+    var up = state.materials.filter(function (m) { return m.exam && diffDays(parseISO(m.exam), TODAY) >= 0; })
+      .sort(function (a, b) { return a.exam < b.exam ? -1 : 1; })[0];
+    box.append(el('div', 'k', 'next exam'));
+    if (up) {
+      var n = diffDays(parseISO(up.exam), TODAY);
+      box.append(el('div', 'big', up.subject + ' ' + inDays(n)));
+    } else {
+      box.append(el('div', 'big', 'No date set'), el('div', 'k', 'Add an exam date above'));
+    }
+  }
+  function setActive(id) {
+    if (id === state.active) return;
+    state.active = id; save(); resetGen();
+    renderMats(); renderActive(); $('#topic').value = ''; renderExplain(); renderQuiz();
+  }
+  function removeMat(id) {
+    state.materials = state.materials.filter(function (m) { return m.id !== id; });
+    state.tuned = null; persistDel(id);
+    if (state.active === id) { state.active = state.materials.length ? state.materials[0].id : null; resetGen(); $('#topic').value = ''; }
+    save(); renderAll();
+  }
+  function addMaterial(name, text) {
+    var id = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    var m = { id: id, name: name, subject: subjectFromName(name), text: text.slice(0, MAXTEXT), exam: null, sample: false, createdAt: Date.now() };
+    state.materials.push(m);
+    state.active = id; state.tuned = null; persistMat(m); save(); resetGen(); $('#topic').value = '';
+    renderAll();
+  }
+  async function addFiles(list) {
+    var notes = [], added = 0;
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i], ext = (f.name.split('.').pop() || '').toLowerCase();
+      if (['pdf', 'doc', 'docx', 'ppt', 'pptx'].indexOf(ext) >= 0 || /^image\//.test(f.type)) { notes.push(f.name + ': this page reads text files only. Copy the text out and use “or paste text”.'); continue; }
+      if (f.size > 200000) { notes.push(f.name + ' is over 200 KB. Split it into smaller files.'); continue; }
+      var text;
+      try { text = await f.text(); } catch (e) { notes.push('Could not read ' + f.name + '.'); continue; }
+      if (text.indexOf('\u0000') >= 0) { notes.push(f.name + ' is not a text file.'); continue; }
+      if (!text.trim()) { notes.push(f.name + ' is empty.'); continue; }
+      addMaterial(f.name, text); added++;
+    }
+    var out = notes.join(' ');
+    if (added) out = (out ? out + ' ' : '') + 'Added ' + added + (added === 1 ? ' file' : ' files') + '. Set an exam date to include it in the plan.';
+    msg(out);
+  }
+
+  /* ---------- explain ---------- */
+  var LEVELS = {
+    beginner: { label: 'Beginner', rule: 'Use plain language and one everyday analogy. Define any term before using it. About 200 words.' },
+    exam: { label: 'Exam-ready', rule: 'Give precise definitions, the points an examiner marks, one common mistake and one worked example. About 260 words.' },
+    deep: { label: 'Deep dive', rule: 'Give formal reasoning, edge cases, why it works, trade-offs and links to related concepts. About 380 words.' }
+  };
+  function renderExplain() {
+    var g = gen.explain, out = $('#explainOut'), badge = $('#explainBadge'), busy = g && g.busy;
+    if (!g) {
+      out.textContent = ''; out.append(el('p', 'empty', activeMat() ? 'Pick a topic below the box or type your own, choose a level and press Explain.' : 'Add some notes first, then pick a topic.'));
+      badge.hidden = true;
+    } else {
+      if (g.text) out.innerHTML = md(g.text); else out.textContent = busy ? 'Thinking…' : '';
+      badge.hidden = false; badge.className = 'badge' + (g.example ? ' ex' : '');
+      badge.textContent = g.example ? 'Example. Press Explain to use your notes' : busy ? 'Writing…' : g.stopped ? 'Stopped' : g.subject + ' · ' + LEVELS[g.level].label + (g.truncated ? ' · cut short' : '');
+    }
+    $('#explainStop').hidden = !busy;
+    $('#explainBtn').disabled = aiDisabled || !!busy;
+  }
+  async function runExplain() {
+    var m = activeMat(), err = $('#explainErr'); err.hidden = true;
+    if (!m) { return; }
+    var topic = $('#topic').value.trim();
+    if (!topic) { $('#topic').focus(); err.textContent = 'Type a topic or tap one of the topics found in your notes.'; err.hidden = false; return; }
+    var smp = await samplePromise; if (!smp) { aiOff(); return; }
+    var seq = ++explainSeq; if (explainCtl) explainCtl.abort(); var ctl = explainCtl = new AbortController();
+    var level = state.level;
+    gen.explain = { text: '', topic: topic, level: level, subject: m.subject, example: false, busy: true };
+    renderExplain();
+    var prompt = 'You are a study tutor. ' + who() + 'Explain the topic "' + topic + '" to a student using the notes below.\nLevel: ' + LEVELS[level].label + '. ' + LEVELS[level].rule +
+      '\nRules: base the explanation on the notes. If the notes do not cover the topic, say so in one short line, then explain it from general knowledge. Use short paragraphs and "-" bullets, put key terms in **bold**, and include a tiny example. No preamble and no closing offer.\n\nNOTES (' + m.subject + '):\n' + m.text.slice(0, 20000);
+    try {
+      var r = await smp(prompt, { signal: ctl.signal, onText: function (u) { if (seq !== explainSeq) return; gen.explain.text = u.text; renderExplain(); } });
+      if (seq !== explainSeq) return;
+      gen.explain.text = r.text; gen.explain.truncated = r.truncated; gen.explain.busy = false;
+    } catch (e) {
+      if (seq !== explainSeq) return;
+      gen.explain.busy = false;
+      if (e && e.code === 'cancelled') { gen.explain.stopped = true; }
+      else {
+        if (e && e.text) gen.explain.text = e.text; else if (!gen.explain.text) gen.explain = null;
+        err.textContent = errCopy(e); err.hidden = false;
+        if (isPermanent(e)) aiOff();
+      }
+    }
+    renderExplain();
+  }
+
+  /* ---------- quiz ---------- */
+  function renderQuiz() {
+    var body = $('#quizBody'); body.textContent = '';
+    var q = gen.quiz, badge = $('#qBadge'), counter = $('#qCounter');
+    $('#quizStop').hidden = !quizBusy; $('#quizBtn').disabled = aiDisabled || quizBusy;
+    badge.hidden = !(q && q.example); badge.className = 'badge ex'; badge.textContent = 'Example';
+    counter.textContent = '';
+    if (quizBusy) { body.append(el('p', 'empty', 'Writing questions from your notes. This can take up to a minute.')); return; }
+    if (!q) { body.append(el('p', 'empty', activeMat() ? 'Choose how many questions you want and press Generate quiz.' : 'Add some notes first.')); return; }
+    var n = q.items.length;
+    if (q.i >= n) {
+      var right = q.items.filter(function (it, k) { return q.picked[k] === it.answer; }).length;
+      var missed = q.items.filter(function (it, k) { return q.picked[k] !== it.answer; });
+      counter.textContent = 'done';
+      body.append(el('p', 'score', right + ' / ' + n), el('p', null, right === n ? 'Full marks. Move on to the next topic.' : missed.length + (missed.length === 1 ? ' question' : ' questions') + ' to revisit.'));
+      var row = el('div', 'btnrow');
+      if (missed.length) { var rb = el('button', 'btn', 'Retry missed (' + missed.length + ')'); rb.type = 'button'; rb.onclick = function () { gen.quiz = { items: missed, i: 0, picked: [], example: q.example, subject: q.subject }; renderQuiz(); focusFirstOpt(); }; row.append(rb); }
+      var ag = el('button', 'btn ghost', 'Start again'); ag.type = 'button'; ag.onclick = function () { gen.quiz = { items: q.items, i: 0, picked: [], example: q.example, subject: q.subject }; renderQuiz(); focusFirstOpt(); };
+      row.append(ag); body.append(row); return;
+    }
+    counter.textContent = (q.i + 1) + '/' + n;
+    var it = q.items[q.i], picked = q.picked[q.i], answered = picked != null;
+    body.append(el('p', 'qtext', it.q));
+    var ul = el('div', 'opts');
+    it.options.forEach(function (opt, k) {
+      var b = el('button', 'opt' + (answered && k === it.answer ? ' right' : '') + (answered && k === picked && picked !== it.answer ? ' wrong' : ''));
+      b.type = 'button'; b.disabled = answered;
+      b.append(el('span', 'l', 'ABCD'.charAt(k) + '.'), el('span', 't', opt));
+      if (answered && k === it.answer) b.append(el('span', 'ok', 'correct ✓'));
+      b.onclick = function () { q.picked[q.i] = k; renderQuiz(); var nx = $('#nextQ'); if (nx) nx.focus(); };
+      ul.append(b);
+    });
+    body.append(ul);
+    if (answered) {
+      body.append(el('p', 'why', (picked === it.answer ? 'Correct. ' : 'Not quite. ') + (it.why || '')));
+      var nb = el('button', 'btn', q.i + 1 < n ? 'Next question' : 'See score'); nb.type = 'button'; nb.id = 'nextQ';
+      nb.onclick = function () { q.i++; renderQuiz(); focusFirstOpt(); };
+      var r2 = el('div', 'btnrow'); r2.append(nb); body.append(r2);
+    }
+  }
+  function focusFirstOpt() { var o = $('#quizBody .opt:not(:disabled)') || $('#quizBody .btn'); if (o) o.focus(); }
+  async function runQuiz() {
+    var m = activeMat(), err = $('#quizErr'); err.hidden = true;
+    if (!m) return;
+    var scope = $('#qScope').value === 'topic' ? $('#topic').value.trim() : '';
+    if ($('#qScope').value === 'topic' && !scope) { err.textContent = 'Type a topic in the box above, or choose Whole material.'; err.hidden = false; return; }
+    var smp = await samplePromise; if (!smp) { aiOff(); return; }
+    var seq = ++quizSeq; if (quizCtl) quizCtl.abort(); var ctl = quizCtl = new AbortController();
+    var n = Number($('#qN').value) || 5;
+    quizBusy = true; renderQuiz();
+    var prompt = who() + 'Write ' + n + ' multiple-choice questions for exam revision ' + (scope ? 'on the topic "' + scope + '" ' : 'covering the whole material ') + 'using the notes below.\nReply with only a JSON array of objects like {"q": "question", "options": ["a", "b", "c", "d"], "answer": 1, "why": "one-sentence explanation"}.\nRules: exactly 4 options without letter prefixes, "answer" is the 0-based index of the single correct option, plausible distractors, a mix of recall and application, and the correct option in varied positions.\n\nNOTES (' + m.subject + '):\n' + m.text.slice(0, 20000);
+    try {
+      var arr = await smp.json(prompt, { signal: ctl.signal, cache: false });
+      if (seq !== quizSeq) return;
+      var items = (Array.isArray(arr) ? arr : []).filter(function (t) {
+        return t && typeof t.q === 'string' && Array.isArray(t.options) && t.options.length >= 2 && t.options.every(function (o) { return typeof o === 'string'; }) && Number.isInteger(t.answer) && t.answer >= 0 && t.answer < t.options.length;
+      }).map(function (t) { return { q: t.q, options: t.options.slice(0, 6), answer: t.answer, why: typeof t.why === 'string' ? t.why : '' }; });
+      if (!items.length) throw { code: 'invalid_json' };
+      gen.quiz = { items: items, i: 0, picked: [], example: false, subject: m.subject };
+      quizBusy = false;
+    } catch (e) {
+      if (seq !== quizSeq) return;
+      quizBusy = false;
+      if (!(e && e.code === 'cancelled')) { err.textContent = errCopy(e); err.hidden = false; if (isPermanent(e)) aiOff(); }
+    }
+    renderQuiz();
+  }
+
+  /* ---------- revision plan ---------- */
+  function kindOf(task) {
+    if (/mock/i.test(task)) return 'mock test';
+    if (/weak topics|recap/i.test(task)) return 'recap';
+    if (/exam day/i.test(task)) return 'exam day';
+    return '';
+  }
+  function autoPlan() {
+    var mats = state.materials.filter(function (m) { return m.exam; }).map(function (m) { return { m: m, exam: parseISO(m.exam), topics: topicsOf(m), n: 0 }; });
+    var items = [];
+    for (var d = 0; d < 7; d++) {
+      var date = addDays(TODAY, d);
+      var live = mats.filter(function (x) { return diffDays(x.exam, date) >= 0; });
+      if (!live.length) continue;
+      var pool = [];
+      live.forEach(function (x) {
+        var left = diffDays(x.exam, date);
+        if (left === 0) items.push({ date: date, subject: x.m.subject, task: 'Exam day. Skim your one-page summary, then go.' });
+        else if (left === 1) items.push({ date: date, subject: x.m.subject, task: 'Weak topics recap' });
+        else if (left === 2) items.push({ date: date, subject: x.m.subject, task: 'Timed mock test' });
+        else pool.push({ x: x, left: left });
+      });
+      if (pool.length) {
+        pool.sort(function (a, b) { return a.left * (a.x.n + 1) - b.left * (b.x.n + 1); });
+        var pick = pool[0].x, t = pick.topics[pick.n];
+        items.push({ date: date, subject: pick.m.subject, task: t ? t : 'Practice questions' });
+        pick.n++;
+      }
+    }
+    return items.map(function (t) { t.kind = kindOf(t.task); return t; });
+  }
+  function currentPlan() {
+    if (state.tuned) {
+      var base = parseISO(state.tuned.on);
+      var items = state.tuned.items.map(function (t) { return { date: addDays(base, t.day), subject: t.subject, task: t.task, kind: kindOf(t.task) }; })
+        .filter(function (t) { var n = diffDays(t.date, TODAY); return n >= 0 && n < 7; });
+      if (items.length) return { items: items, tuned: true };
+    }
+    return { items: autoPlan(), tuned: false };
+  }
+  function planKey(t) { return iso(t.date) + '|' + t.subject + '|' + t.task; }
+  function updateProgress() {
+    var boxes = document.querySelectorAll('#planList input[type=checkbox]'), done = 0;
+    boxes.forEach(function (b) { if (b.checked) done++; });
+    $('#planCount').textContent = done + ' of ' + boxes.length + ' done';
+    $('#planBar').style.width = boxes.length ? Math.round(done / boxes.length * 100) + '%' : '0%';
+  }
+  function renderPlan() {
+    var cp = currentPlan(), box = $('#planList'); box.textContent = '';
+    $('#planBadge').hidden = !cp.tuned; $('#resetPlan').hidden = !cp.tuned;
+    if (!cp.items.length) {
+      box.append(el('p', 'empty', 'Add an exam date to a material and the plan builds itself.'));
+      updateProgress(); return;
+    }
+    var groups = {};
+    cp.items.forEach(function (t) { (groups[iso(t.date)] = groups[iso(t.date)] || []).push(t); });
+    Object.keys(groups).sort().forEach(function (k) {
+      var d = parseISO(k), isToday = diffDays(d, TODAY) === 0;
+      var sec = el('section', 'day' + (isToday ? ' today' : ''));
+      sec.append(el('h3', null, (isToday ? 'Today · ' : '') + dayLabel(d)));
+      var ul = el('ul');
+      groups[k].forEach(function (t) {
+        var key = planKey(t), li = el('li', state.done[key] ? 'done' : '');
+        var lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!state.done[key];
+        cb.onchange = function () { if (cb.checked) state.done[key] = true; else delete state.done[key]; li.className = cb.checked ? 'done' : ''; save(); updateProgress(); };
+        var tx = el('span', 'tx'); tx.append(el('span', 'subj', t.subject));
+        var task = el('span', 'task', t.task);
+        if (t.kind) task.append(el('span', 'kind', t.kind));
+        tx.append(task); lab.append(cb, tx); li.append(lab); ul.append(li);
+      });
+      sec.append(ul); box.append(sec);
+    });
+    updateProgress();
+  }
+  async function runTune() {
+    var note = $('#planMsg'); note.textContent = '';
+    var mats = state.materials.filter(function (m) { return m.exam && diffDays(parseISO(m.exam), TODAY) >= 0; });
+    if (!mats.length) { note.textContent = 'Add an exam date to at least one material first.'; return; }
+    var smp = await samplePromise; if (!smp) { aiOff(); return; }
+    var seq = ++tuneSeq; if (tuneCtl) tuneCtl.abort(); var ctl = tuneCtl = new AbortController();
+    $('#tuneBtn').disabled = true; $('#tuneStop').hidden = false; note.textContent = 'Planning your week…';
+    var list = mats.map(function (m) {
+      return '- ' + m.subject + ': exam ' + m.exam + ' (' + inDays(diffDays(parseISO(m.exam), TODAY)) + '); topics: ' + topicsOf(m).slice(0, 12).join('; ');
+    }).join('\n');
+    var prompt = who() + 'Today is ' + iso(TODAY) + ' (' + TODAY.toLocaleDateString('en-US', { weekday: 'long' }) + '). Build a 7-day revision plan where day 0 is today and day 6 is six days from now.\nExams:\n' + list +
+      '\nRules: 1 to 3 tasks per day, each under 15 words and specific to the listed topics. Spend more time on the nearest exam. Put a timed mock test two days before an exam and a weak-topics recap the day before. Schedule nothing for a subject after its exam date.\nReply with only a JSON array of {"day": 0-6, "subject": "subject name", "task": "what to do"}.';
+    try {
+      var arr = await smp.json(prompt, { signal: ctl.signal, cache: false });
+      if (seq !== tuneSeq) return;
+      var items = (Array.isArray(arr) ? arr : []).filter(function (t) {
+        return t && Number.isInteger(t.day) && t.day >= 0 && t.day <= 6 && typeof t.subject === 'string' && typeof t.task === 'string' && t.task.trim();
+      }).map(function (t) { return { day: t.day, subject: t.subject.slice(0, 30), task: t.task.trim().slice(0, 140) }; }).slice(0, 21);
+      if (!items.length) throw { code: 'invalid_json' };
+      items.sort(function (a, b) { return a.day - b.day; });
+      state.tuned = { on: iso(TODAY), items: items }; save(); note.textContent = '';
+    } catch (e) {
+      if (seq !== tuneSeq) return;
+      if (!(e && e.code === 'cancelled')) { note.textContent = errCopy(e); if (isPermanent(e)) aiOff(); } else note.textContent = '';
+    }
+    $('#tuneBtn').disabled = aiDisabled; $('#tuneStop').hidden = true; renderPlan();
+  }
+
+  /* ---------- wiring ---------- */
+  function renderAll() { renderMats(); renderActive(); renderNext(); renderExplain(); renderQuiz(); renderPlan(); if (typeof renderChat === 'function') renderChat(); }
+
+  document.querySelectorAll('input[name=level]').forEach(function (r) {
+    r.checked = r.value === state.level;
+    r.onchange = function () {
+      state.level = r.value; save();
+      if (gen.explain && gen.explain.example) { gen.explain.text = EX_EXPLAIN[state.level]; gen.explain.level = state.level; renderExplain(); }
+    };
+  });
+  $('#explainBtn').onclick = runExplain;
+  $('#topic').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runExplain(); } });
+  $('#explainStop').onclick = function () { if (explainCtl) explainCtl.abort(); };
+  $('#quizBtn').onclick = runQuiz;
+  $('#quizStop').onclick = function () { if (quizCtl) quizCtl.abort(); };
+  $('#tuneBtn').onclick = runTune;
+  $('#tuneStop').onclick = function () { if (tuneCtl) tuneCtl.abort(); };
+  $('#resetPlan').onclick = function () { state.tuned = null; save(); renderPlan(); };
+
+  $('#examDate').onchange = function () {
+    var m = activeMat(); if (!m) return;
+    m.exam = this.value || null; state.tuned = null; persistMat(m); save(); renderMats(); renderNext(); renderPlan();
+  };
+  $('#clearDate').onclick = function () {
+    var m = activeMat(); if (!m) return;
+    m.exam = null; $('#examDate').value = ''; state.tuned = null; persistMat(m); save(); renderMats(); renderNext(); renderPlan();
+  };
+
+  $('#fileIn').onchange = function () { var f = Array.prototype.slice.call(this.files); this.value = ''; addFiles(f); };
+  var drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files.length) addFiles(Array.prototype.slice.call(e.dataTransfer.files)); });
+  $('#pasteBtn').onclick = function () {
+    var f = $('#pasteForm'); f.hidden = !f.hidden; this.setAttribute('aria-expanded', f.hidden ? 'false' : 'true');
+    if (!f.hidden) $('#pName').focus();
+  };
+  $('#pasteForm').onsubmit = function (e) {
+    e.preventDefault();
+    var text = $('#pText').value.trim(), name = $('#pName').value.trim() || 'Pasted notes';
+    if (!text) { msg('Paste some notes first.'); return; }
+    addMaterial(name.indexOf('.') > 0 ? name : name + '.txt', text);
+    $('#pText').value = ''; $('#pName').value = ''; $('#pasteForm').hidden = true; $('#pasteBtn').setAttribute('aria-expanded', 'false');
+    msg('Added ' + name + '. Set an exam date to include it in the plan.');
+  };
+
+  /* ---------- ask your notes (chat) ---------- */
+  var chat = { turns: [], busy: false, ctl: null, seq: 0 };
+  var SUGGEST = ['Summarize these notes', 'What could the exam ask?', 'Which part is hardest?'];
+  function renderChat() {
+    var log = $('#chatLog'); log.textContent = '';
+    var m = activeMat();
+    if (!chat.turns.length) log.append(el('p', 'empty', m ? 'Ask a question and Claude answers from the selected notes.' : 'Add some notes first.'));
+    chat.turns.forEach(function (t) {
+      var b = el('div', 'bub ' + t.role + (t.role === 'assistant' ? ' prose' : ''));
+      if (t.role === 'assistant') { if (t.content) b.innerHTML = md(t.content); else b.textContent = 'Thinking…'; } else b.textContent = t.content;
+      log.append(b);
+    });
+    log.scrollTop = log.scrollHeight;
+    $('#chatStop').hidden = !chat.busy; $('#chatSend').disabled = aiDisabled || chat.busy;
+    var sug = $('#chatSug'); sug.textContent = '';
+    if (m && !chat.turns.length) SUGGEST.forEach(function (s) {
+      var b = el('button', 'topic', s); b.type = 'button'; b.onclick = function () { sendChat(s); }; sug.append(b);
+    });
+  }
+  async function sendChat(q) {
+    var m = activeMat(), err = $('#chatErr'); err.hidden = true;
+    q = (q || '').trim(); if (!m || !q || chat.busy) return;
+    var smp = await samplePromise; if (!smp) { aiOff(); return; }
+    var seq = ++chat.seq, ctl = chat.ctl = new AbortController();
+    chat.turns.push({ role: 'user', content: q });
+    var reply = { role: 'assistant', content: '' }; chat.turns.push(reply);
+    chat.busy = true; $('#chatIn').value = ''; renderChat();
+    var rules = 'You are a study tutor answering questions about a student\'s notes. ' + who() + 'Answer from the notes below. If they do not cover the question, say so briefly, then help from general knowledge. Be concise (under 200 words unless asked for more), use "-" bullets and **bold** for key terms.\n\nNOTES (' + m.subject + '):\n' + m.text.slice(0, 20000);
+    var history = chat.turns.slice(0, -1).slice(-10);
+    try {
+      var r = await smp([{ role: 'user', content: rules }].concat(history), { cache: false, signal: ctl.signal, onText: function (u) { if (seq !== chat.seq) return; reply.content = u.text; renderChat(); } });
+      if (seq !== chat.seq) return;
+      reply.content = r.text;
+    } catch (e) {
+      if (seq !== chat.seq) return;
+      if (e && e.text) reply.content = e.text;
+      if (!reply.content) chat.turns.pop();
+      if (!(e && e.code === 'cancelled')) { err.textContent = errCopy(e); err.hidden = false; if (isPermanent(e)) aiOff(); }
+    }
+    chat.busy = false; renderChat();
+  }
+  $('#chatForm').onsubmit = function (e) { e.preventDefault(); sendChat($('#chatIn').value); };
+  $('#chatStop').onclick = function () { if (chat.ctl) chat.ctl.abort(); };
+  $('#chatClear').onclick = function () { chat.seq++; if (chat.ctl) chat.ctl.abort(); chat.turns = []; chat.busy = false; $('#chatErr').hidden = true; renderChat(); };
+
+  /* ---------- log in, sign up, log out ---------- */
+  function syncLevelRadios() { document.querySelectorAll('input[name=level]').forEach(function (r) { r.checked = r.value === state.level; }); }
+  function show(which) {
+    $('#loadingBox').hidden = which !== 'loading';
+    $('#authBox').hidden = which !== 'auth';
+    $('#shell').hidden = which !== 'app';
+  }
+  function authMsg(t) { var p = $('#authMsg'); p.textContent = t || ''; p.hidden = !t; }
+  function renderAcct() {
+    var box = $('#acct'); box.textContent = '';
+    box.hidden = mode !== 'account' && mode !== 'guest';
+    var hand = $('#hand');
+    if (mode === 'account') {
+      hand.textContent = 'welcome back, ' + (acct.profile && acct.profile.name ? acct.profile.name : 'friend');
+      var img = el('img', 'avatar'); img.alt = ''; img.src = acct.me && acct.me.avatarUrl ? acct.me.avatarUrl : ''; if (!img.src) img.hidden = true;
+      var col = el('div'); col.style.minWidth = '0';
+      col.append(el('div', 'who', acct.profile.name || 'You'));
+      var s = el('div', 'sync', 'Saved to your account'); s.id = 'syncNote'; col.append(s);
+      var pb = el('button', 'btn ghost small', 'Profile'); pb.type = 'button'; pb.onclick = showProfileEdit;
+      var lb = el('button', 'btn ghost small', 'Log out'); lb.type = 'button'; lb.onclick = logOut;
+      box.append(img, col, pb, lb);
+    } else if (mode === 'guest') {
+      hand.textContent = 'your notes in, a plan out';
+      var c = el('span', 'chip', 'Guest · saved on this device only');
+      var lg = el('button', 'btn small', 'Log in or sign up'); lg.type = 'button'; lg.onclick = function () { startAuth(); };
+      box.append(c, lg);
+    }
+  }
+  function beginApp() {
+    resetGen();
+    var a = activeMat();
+    if (a && a.id === 'm1' && a.sample) exampleState(); else $('#topic').value = '';
+    syncLevelRadios(); show('app'); renderAcct(); renderAll();
+  }
+  function enterGuest() {
+    clearTimeout(stTimer);
+    mode = 'guest'; state = loadLocal(); beginApp();
+  }
+  async function enterAccount() {
+    var snap = await matCol().get();
+    var mats = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+    mats.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+    var st = await docRef('settings').get(), sd = st.exists ? st.data() : {};
+    var done = {}; (sd.doneKeys || []).forEach(function (k) { done[k] = true; });
+    state = {
+      materials: mats,
+      active: mats.some(function (m) { return m.id === sd.active; }) ? sd.active : (mats[0] ? mats[0].id : null),
+      level: sd.level || (acct.profile && acct.profile.level) || 'exam',
+      done: done, tuned: sd.tuned || null
+    };
+    mode = 'account'; beginApp();
+  }
+  async function logOut() { try { await wq; } catch (e) {} enterGuest(); }
+
+  function gate(kind) {
+    mode = 'gate'; show('auth'); renderAcct();
+    $('#authForm').hidden = true; $('#gateBtns').hidden = false; authMsg('');
+    $('#authH').textContent = kind === 'error' ? 'Could not reach your account' : 'Log in or sign up';
+    $('#authText').textContent = kind === 'error'
+      ? 'Your account did not answer. Check your connection and try again, or continue as a guest.'
+      : 'Accounts here use your claude.ai sign-in. Open this page while signed in to claude.ai, with permission to use the page, and your notes, exam dates and progress are saved to your account on every device. As a guest, everything stays in this browser.';
+    $('#gateRetry').focus();
+  }
+  function showForm(kind) { // kind: signup | edit
+    mode = 'gate'; show('auth'); renderAcct();
+    $('#gateBtns').hidden = true; $('#authForm').hidden = false; authMsg('');
+    var edit = kind === 'edit', p = acct.profile || {};
+    $('#authH').textContent = edit ? 'Your profile' : 'Create your study account';
+    $('#authText').textContent = edit ? 'Update how the copilot addresses you and tailors its answers.' : 'It takes a moment. The copilot uses these details to tailor explanations and quizzes to your course.';
+    $('#aName').value = p.name || (acct.me && acct.me.name) || '';
+    $('#aCourse').value = p.course || '';
+    $('#aLevel').value = p.level || 'exam';
+    $('#aSubmit').textContent = edit ? 'Save profile' : 'Create account';
+    $('#aCancel').hidden = !edit; $('#aGuest').hidden = edit; $('#aDanger').hidden = !edit;
+    $('#aDelBox').hidden = true;
+    var local = loadLocal(false), extra = local && local.materials.some(function (m) { return !m.sample; });
+    $('#aImportRow').hidden = edit || !extra; $('#aImport').checked = true;
+    authForm.dataset.kind = kind;
+    $('#aName').focus();
+  }
+  function showProfileEdit() { showForm('edit'); }
+  var authForm = $('#authForm');
+
+  async function startAuth() {
+    mode = 'loading'; show('loading'); renderAcct();
+    var u = await withTimeout(userPromise, 9000, null), d = await withTimeout(dbPromise, 9000, null), me = null;
+    if (u) { try { me = await u.me(); } catch (e) {} }
+    acct.uid = me && me.id ? me.id : null; acct.db = d; acct.me = me; acct.profile = null;
+    if (!acct.uid || !acct.db) { gate('none'); return; }
+    var snap;
+    try { snap = await withTimeout(docRef('profile').get(), 10000, null); } catch (e) { gate('error'); return; }
+    if (!snap) { gate('error'); return; }
+    if (!snap.exists) { showForm('signup'); return; }
+    acct.profile = Object.assign({}, snap.data());
+    try { await enterAccount(); } catch (e) { gate('error'); }
+  }
+
+  authForm.onsubmit = async function (e) {
+    e.preventDefault();
+    var kind = authForm.dataset.kind, name = $('#aName').value.trim();
+    if (!name) { authMsg('Enter a display name.'); $('#aName').focus(); return; }
+    var btn = $('#aSubmit'); btn.disabled = true; authMsg('');
+    var prof = Object.assign({}, acct.profile || {}, { name: name, course: $('#aCourse').value.trim(), level: $('#aLevel').value });
+    if (!prof.createdAt) prof.createdAt = Date.now();
+    try {
+      await docRef('profile').set(prof);
+      acct.profile = prof;
+      if (kind === 'signup') {
+        var mats = seed().materials, st = seed();
+        if ($('#aImport').checked && !$('#aImportRow').hidden) {
+          var local = loadLocal(false);
+          if (local) {
+            local.materials.filter(function (m) { return !m.sample; }).forEach(function (m) { m.createdAt = m.createdAt || Date.now(); m.text = (m.text || '').slice(0, MAXTEXT); mats.push(m); });
+            st.level = local.level || prof.level; st.done = local.done || {};
+          }
+        } else st.level = prof.level;
+        for (var i = 0; i < mats.length; i++) await matCol().doc(mats[i].id).set(matDoc(mats[i]));
+        await docRef('settings').set({ level: prof.level, active: 'm1', doneKeys: Object.keys(st.done).slice(0, 400), tuned: null });
+        await enterAccount();
+      } else {
+        if (mode !== 'account') { /* editing from the app */ }
+        mode = 'account'; renderAcct(); show('app'); beginAfterEdit();
+      }
+    } catch (err) {
+      authMsg(err && err.code === 'invalid_argument'
+        ? 'This page could not save to your account. Ask the page owner to share it with you as a Contributor, or continue as a guest.'
+        : 'Could not save your account. Check your connection and try again.');
+    }
+    btn.disabled = false;
+  };
+  function beginAfterEdit() { $('#hand').textContent = 'welcome back, ' + acct.profile.name; renderChat(); }
+  $('#aCancel').onclick = function () { mode = 'account'; show('app'); renderAcct(); };
+  $('#aGuest').onclick = enterGuest;
+  $('#gateGuest').onclick = enterGuest;
+  $('#gateRetry').onclick = startAuth;
+  $('#aDelAsk').onclick = function () { $('#aDelBox').hidden = false; $('#aDelGo').focus(); };
+  $('#aDelGo').onclick = async function () {
+    var btn = this; btn.disabled = true;
+    try {
+      var snap = await matCol().get();
+      for (var i = 0; i < snap.docs.length; i++) await matCol().doc(snap.docs[i].id).delete();
+      await docRef('settings').delete(); await docRef('profile').delete();
+      acct.profile = null; state = seed(); btn.disabled = false; startAuth();
+    } catch (e) { btn.disabled = false; authMsg('Could not delete your data. Try again.'); }
+  };
+
+  /* start: resolve who is viewing, then open the app */
+  renderAll();
+  startAuth();
+})();
+</script>
+
+</body></html>
